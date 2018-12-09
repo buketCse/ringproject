@@ -116,7 +116,7 @@ export default class HomeScreen extends React.Component {
     }
   }
 
-  componentDidUpdate() {
+  componentDidMount() {
     this.mapRef.setMapBoundaries(
         northEast = {
             latitude: 40.973867,
@@ -138,6 +138,7 @@ export default class HomeScreen extends React.Component {
         };
     }, 2000);
 }
+
 
   render() {
     return (
