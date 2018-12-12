@@ -1,7 +1,11 @@
+/**
+ * Sag üste koyulan menunun icerigi buraya eklenebilir.
+ */
+
 import React from 'react'
 import { Modal, View, Image, Text, StyleSheet,Dimensions } from 'react-native';
 const {width, height} = Dimensions.get('window');
-const Menu = (props) => (
+const MenuBar = (props) => (
   <Modal visible={ props.modalVisible } animationType = "slide" 
          onRequestClose={ () => console.log('closed') }>>
     <View>
@@ -22,4 +26,4 @@ const styles = StyleSheet.create({
   }
 })
 
-export default Menu;
+export default MenuBar;

@@ -1,3 +1,10 @@
+/**
+ * Uygulamada kullanılan tek ekran,
+ * Map direk buradan acılıyor,
+ * App.js ile baglantılı tek ekran.
+ */
+
+
 import React from 'react';
 import {
   Image,
@@ -9,17 +16,14 @@ import {
   TouchableOpacity,
   View,
   Dimensions,
+  PermissionsAndroid
 } from 'react-native';
-import { WebBrowser } from 'expo';
-import MapView, {Marker, AnimatedRegion, ProviderPropType} from 'react-native-maps';
-import { DrawerNavigator } from 'react-navigation';
+import MapView, 
+  {Marker, AnimatedRegion, ProviderPropType, Polyline, PROVIDER_GOOGLE
+  } from 'react-native-maps';
 
 import _ from 'lodash';
 import imageBus from "../assets/images/icon-yellow-bus-96.png";
-//import menuIcon from "../assets/images/ic_view_list2.png";
-//import {width , height} from '../constants/Layout.js';
-
-import { MonoText } from '../components/StyledText';
 
 const {width, height} = Dimensions.get('window');
 
@@ -28,23 +32,25 @@ const LONGITUDE = 29.152570;
 const LATITUDE_DELTA = 0.01;
 const LONGITUDE_DELTA = 0.0;
 
-export default class HomeScreen extends React.Component {
-  
-  // static navigationOptions = {
-  //   header: null,
-  // };
-
+class HomeScreen extends React.Component {
   constructor(props) {
     super(props);
-    //console.log('props',this.props) //props will get logged.
 
     this.state = {
-      modalVisible: false,
+      latitude: LATITUDE,
+      longitude: LONGITUDE,
+      routeCoordinates: [],
+      distanceTravelled: 0,
+      prevLatLng: {},
       coordinate: new AnimatedRegion({
-        latitude: 40.972189,
-        longitude: 29.153667
+        latitude: LATITUDE,
+        longitude: LONGITUDE
       }),
-      markers: [
+      // coordinate: new AnimatedRegion({
+      //   latitude: 40.972189,
+      //   longitude: 29.153667
+      // }),
+      myMarkers: [
         {
           coordinate: {
               latitude: 40.974805,
@@ -73,19 +79,37 @@ export default class HomeScreen extends React.Component {
         //   description: "This is the third best place in Portland",
         //   image: imageBus,
         // },
-      ],
-      region: {
-        latitude:40.972274,
-        longitude: 29.152570,
-        latitudeDelta: 0.01,
-        longitudeDelta: 0.0
+      ]
+    }
+
+    //this.renderRingMarkers=this.renderRingMarkers.bind(this);
+    //this.animate=this.animate.bind(this);
+  }
+
+  _requestLocationPermission = async () => {
+    try {
+      const granted = await PermissionsAndroid.request(
+        PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
+        {
+          'title': 'Ring App Location Permission',
+          'message': 'Ring App needs access to your location ' +
+                    'so you can take locations.'
+        }
+      )
+      if (granted === PermissionsAndroid.RESULTS.GRANTED) {
+        console.log("You can use the GPS")
+      } else {
+        console.log("GPS permission denied")
       }
+    } catch (err) {
+      console.log('err',err)
     }
   }
 
   renderRingMarkers() {
-    return this.state.markers.map((eachMarker, index) => {
-      console.log(11,eachMarker)
+    console.log('renderRing')
+    return this.state.myMarkers.map((eachMarker, index) => {
+      
       this.animate()
       return (
         <Marker.Animated key={index} coordinate={ eachMarker.coordinate} image={eachMarker.image}
@@ -93,14 +117,17 @@ export default class HomeScreen extends React.Component {
           this.marker = marker;
         }} />
       );
+      console.log(11,eachMarker)
+
     })
   }
 
-  setModalVisible(visible) {
-    this.setState({modalVisible: visible});
-  }
+  // setModalVisible(visible) {
+  //   this.setState({modalVisible: visible});
+  // }
 
   animate() {
+    console.log('animate')
     const { coordinate } = this.state;
     const newCoordinate = {
       latitude: (Math.floor(LATITUDE  /10  + 0.3)),
@@ -116,45 +143,100 @@ export default class HomeScreen extends React.Component {
     }
   }
 
+
+getMapRegion = () => ({
+  latitude: this.state.latitude,
+  longitude: this.state.longitude,
+  latitudeDelta: LATITUDE_DELTA,
+  longitudeDelta: LONGITUDE_DELTA
+});
+
+
   componentDidMount() {
+
+
+    const { coordinate } = this.state;
+
     this.mapRef.setMapBoundaries(
-        northEast = {
-            latitude: 40.973867,
-            longitude: 29.154676,
-        },southWest = {
-            latitude: 40.972178,
-            longitude: 29.150028,
-        }
-    )
+      northEast = {
+        latitude: 40.973867,
+        longitude: 29.154676,
+      },southWest = {
+        latitude: 40.972178,
+        longitude: 29.150028,
+      });
 
-    setTimeout(() => {
-      const { coordinate } = this.state;
+    // console.log('didMount')
+    // this.mapRef.setMapBoundaries(
+    //     northEast = {
+    //         latitude: 40.973867,
+    //         longitude: 29.154676,
+    //     },southWest = {
+    //         latitude: 40.972178,
+    //         longitude: 29.150028,
+    //     }
+    // )
 
-      const that=this;
+    // setTimeout(() => {
+    //   const { coordinate } = this.state;
 
-        doAnimattion = item => {
-          //that.mapRef.animateToRegion(item.coordinate, 6000);
-          that.marker._component.animateMarkerToCoordinate(item.coordinate, 5000);
-        };
-    }, 2000);
+    //   const that=this;
+
+    //     doAnimattion = item => {
+    //       //that.mapRef.animateToRegion(item.coordinate, 6000);
+    //       that.marker._component.animateMarkerToCoordinate(item.coordinate, 5000);
+    //       console.log('time')
+    //     };
+    // }, 2000);
 }
 
 
+markers(location, imageLoc) {
+  return (
+      <Marker coordinate={{
+          latitude: location.latitude,
+          longitude: location.longitude
+      }} image= {imageLoc}>
+      </Marker>
+      
+  )
+}
+
   render() {
+    let props = this.props;
     return (
       <View style={styles.container}>
         <MapView
-          ref={mapRef => this.mapRef = mapRef}
-          initialRegion={this.state.region}
-          //{...StyleSheet.absoluteFillObject}} means mapview will be filled the screen (altına öğe gelirse haritanın üstünde gözükecek)
-          style={{marginTop:20, 
+        provider={PROVIDER_GOOGLE}
+        showsUserLocation={true}
+        showsMyLocationButton={true}
+        region={this.getMapRegion()}
+        ref={mapRef => {
+          this.mapRef = mapRef;
+        }}
+          style={{position: 'absolute', marginTop:20, 
             ...StyleSheet.absoluteFillObject}}
-          minZoomLevel={16.2}  
+           minZoomLevel={15.5}  
           maxZoomLevel={18}
         >
+        {
+                    props.source ?
+                    this.markers(props.source, {imageBus}): null
+                }
+                {
+                    props.destination ?
+                    this.markers(props.destination, {imageBus}): null
+                }
+                {
+                    props.coords ?
+                    <Polyline
+                        coordinates={props.coords}
+                        strokeWidth={4}
+                        strokeColor="#666" />
+                    : null
+                }
           {this.renderRingMarkers()}
         </MapView>
-        {/* <View style={styles.popupIcon}></View> */}
         <TouchableOpacity
         onPress={() => console.log('click')} style={styles.touchableOpacity}>
         <Image source={require('../assets/images/list_menu.png')} style={styles.menuIcon}/>
@@ -191,6 +273,13 @@ const styles = StyleSheet.create({
     // shadowColor: 'black',
     // shadowOpacity: 3.0,
     // elevation: 1
+  },
+  buttonContainer: {
+    flexDirection: "row",
+    marginVertical: 20,
+    backgroundColor: "transparent"
   }
 
 });
+
+export default HomeScreen;

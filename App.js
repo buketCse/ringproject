@@ -1,8 +1,10 @@
 import React from 'react';
 import { Platform, StatusBar, StyleSheet, View, Image } from 'react-native';
 import { AppLoading, Asset, Font, Icon, SplashScreen } from 'expo';
-import AppNavigator from './navigation/AppNavigator';
 import HomeScreen from './screens/HomeScreen';
+import StaticMap from './screens/StaticMap';
+
+
 
 export default class App extends React.Component {
   state = {
