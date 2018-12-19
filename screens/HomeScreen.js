@@ -24,6 +24,7 @@ import MapView,
 
 import _ from 'lodash';
 import imageBus from "../assets/images/icon-yellow-bus-96.png";
+import * as firebase from 'firebase';
 
 const {width, height} = Dimensions.get('window');
 
@@ -31,45 +32,50 @@ const LATITUDE = 40.972274;
 const LONGITUDE = 29.152570;
 const LATITUDE_DELTA = 0.01;
 const LONGITUDE_DELTA = 0.0;
+var counter=40.974805;
+var counter2=29.153323;
+var datam = []
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDIPZWYh4WluEKii5I6DjcxTaOvh49VtvE",
+  authDomain: "ring-project-224713.firebaseapp.com",
+  databaseURL: "https://ring-project-224713.firebaseio.com/",
+  storageBucket: "ring-project-224713.appspot.com"
+};
+
+firebase.initializeApp(firebaseConfig);
 
 class HomeScreen extends React.Component {
   constructor(props) {
     super(props);
 
     this.state = {
-      latitude: LATITUDE,
-      longitude: LONGITUDE,
+      myPosition: {
+        latitude: 0,
+        longitude: 0,
+        timestamp: 0,
+      },
+      latRegion:LATITUDE,
+      longRegion:LONGITUDE,
+      mapMarkers : [],
       routeCoordinates: [],
       distanceTravelled: 0,
       prevLatLng: {},
-      coordinate: new AnimatedRegion({
-        latitude: LATITUDE,
-        longitude: LONGITUDE
-      }),
       // coordinate: new AnimatedRegion({
-      //   latitude: 40.972189,
-      //   longitude: 29.153667
+      //   latitude: LATITUDE,
+      //   longitude: LONGITUDE
       // }),
-      myMarkers: [
-        {
-          coordinate: {
-              latitude: 40.974805,
-              longitude: 29.153323,
-              latitudeDelta: 0.01,
-              longitudeDelta: 0.0
-              
-          },
-          image: imageBus,
-        },
-        {
-          coordinate: {
-              latitude: 40.972052,
-              longitude: 29.150542,
-              latitudeDelta: 0.01,
-              longitudeDelta: 0.0
-          },
-          image: imageBus,
-        },
+        //   image: imageBus,
+        // },
+        // {
+        //   coordinate: {
+        //       latitude: 40.972052,
+        //       longitude: 29.150542,
+        //       latitudeDelta: 0.01,
+        //       longitudeDelta: 0.0
+        //   },
+        //   image: imageBus,
+        // },
         // {
         //   coordinate: {
         //       latitude: 40.972407,
@@ -79,7 +85,7 @@ class HomeScreen extends React.Component {
         //   description: "This is the third best place in Portland",
         //   image: imageBus,
         // },
-      ]
+      
     }
 
     //this.renderRingMarkers=this.renderRingMarkers.bind(this);
@@ -106,21 +112,67 @@ class HomeScreen extends React.Component {
     }
   }
 
-  renderRingMarkers() {
-    console.log('renderRing')
-    return this.state.myMarkers.map((eachMarker, index) => {
-      
-      this.animate()
-      return (
-        <Marker.Animated key={index} coordinate={ eachMarker.coordinate} image={eachMarker.image}
-        ref={marker => {
-          this.marker = marker;
-        }} />
-      );
-      console.log(11,eachMarker)
+  // storeLatLongValue(ringId, lat, long) {
+  //   firebase.database().ref('rings/' + ringId).set({
+  //     latitude: lat,
+  //     longitude: long
+  //   });
+  // }
 
-    })
+  // storeLatLongValue(ringId) {
+  //   firebase.database().ref('rings/' + ringId).set({
+  //     latitude: lat,
+  //     longitude: long
+  //   });
+  // }
+
+  storeLatLongValue(ringId) {
+    console.log('stored new value:',ringId)
+    counter=counter+0.2,
+    counter2=counter2+0.2,
+    firebase.database().ref('rings/' + ringId).set({
+      latitude: counter,
+      longitude: counter2
+    });
   }
+
+  
+
+  //firebase'den bilgi geldikçe snaphot.val().lat değeri yenilenir, ama fonksiyon çalışmaz.
+  setupRingListener() {
+  
+    let markers2 = []
+     
+     firebase.database().ref('rings/').on('value', (snapshot) => {
+       myRingObj = snapshot.val()
+    
+      var keys =Object.keys(myRingObj)
+      keys.map(k=>{
+      this.addToData(myRingObj[k])
+    })
+  })
+    //   keys.map(k=>{
+      
+    //   markers2.push({latitude : myRingObj[k].latitude, longitude : myRingObj[k].longitude})
+    //  console.log(markers2.length)
+    //  this.setState({mapMarkers : markers2})
+     
+     //})
+  
+    
+  }
+  
+  addToData (a) {
+   
+    console.log('a.lat',a.latitude)
+  }
+
+      // firebase.database().ref('rings/' + ringId).on('value', (snapshot) => {
+    //   const lat = snapshot.val().latitude;
+    //   const long = snapshot.val().longitude;
+    //   console.log("New values: " + lat + " " + long);
+     //  this.renderRings(lat, long)
+    // });
 
   // setModalVisible(visible) {
   //   this.setState({modalVisible: visible});
@@ -145,16 +197,56 @@ class HomeScreen extends React.Component {
 
 
 getMapRegion = () => ({
-  latitude: this.state.latitude,
-  longitude: this.state.longitude,
+  latitude: this.state.latRegion,
+  longitude: this.state.longRegion,
   latitudeDelta: LATITUDE_DELTA,
   longitudeDelta: LONGITUDE_DELTA
 });
 
+myGetCurrentLocation(){
+  navigator.geolocation.getCurrentPosition(
+    position => {
+      // console.log('position===========================', position)
+      // this.socket.emit('position', {
+      //   data: position,
+      //   id: this.id,
+      // });
+
+    
+      let tempPosition = { ...this.state.myPosition };
+      tempPosition.latitude = position.coords.latitude;
+      tempPosition.longitude = position.coords.longitude;
+
+      
+      this.setState({
+        myPosition: tempPosition,
+        isLoading: false,
+      });
+    },
+    error => console.log(error),
+    { enableHighAccuracy: true, timeout: 20000, distanceFilter: 10 }
+  );
+
+  // this.watchID = navigator.geolocation.watchPosition(lastPosition => {
+  //   console.log('watching...')
+  //   //var { distanceTotal, record } = this.state;
+  //   this.setState({lastPosition});
+  //   //if(record) {
+  //       var newLatLng = {latitude:lastPosition.coords.latitude, longitude: lastPosition.coords.longitude}
+  //       firebase.database().ref('myPosition/bus1').set({
+  //           latitude: lastPosition.coords.latitude,
+  //           longitude: lastPosition.coords.longitude
+  //         })
+  //       // this.setState({ track: this.state.track.concat([newLatLng]) });
+  //       // this.setState({ distanceTotal: (distanceTotal + this.calcDistance(newLatLng)) });
+  //       this.setState({ prevLatLng: newLatLng })
+      
+  //     });
+}
 
   componentDidMount() {
 
-
+    
     const { coordinate } = this.state;
 
     this.mapRef.setMapBoundaries(
@@ -188,8 +280,38 @@ getMapRegion = () => ({
     //       console.log('time')
     //     };
     // }, 2000);
+
+    // All_location.map(item => {
+    //   doAnimattion = item => {
+    //     this.mapRef.animateToRegion(item, 4000);
+    //     this.marker._component.animateMarkerToCoordinate(item, 3000);
+    //   };
+
+    //   doAnimattion(item);
+    // });
+    this.myGetCurrentLocation();
 }
 
+
+// renderDraggable(){
+//   return (
+//         <Animated.Marker image={imageBus} coordinate={}/>
+// );
+// }
+
+
+getMyRings(){
+  this.setupRingListener()
+
+  return this.state.mapMarkers.map((mar,idx) =>{
+    return(
+      <Marker key={idx} image={imageBus} coordinate={{latitude:mar.latitude, longitude:mar.longitude}}/>
+        )}
+  )
+
+
+ 
+}
 
 markers(location, imageLoc) {
   return (
@@ -203,7 +325,16 @@ markers(location, imageLoc) {
 }
 
   render() {
+  
     let props = this.props;
+    let myLat = this.state.myPosition.latitude;
+    let myLong = this.state.myPosition.longitude;
+
+    const coords = {
+      latitude: myLat,
+      longitude: myLong,
+    };
+    const myMetadata = `ME!`;
     return (
       <View style={styles.container}>
         <MapView
@@ -216,9 +347,14 @@ markers(location, imageLoc) {
         }}
           style={{position: 'absolute', marginTop:20, 
             ...StyleSheet.absoluteFillObject}}
-           minZoomLevel={15.5}  
-          maxZoomLevel={18}
+          //  minZoomLevel={15.5}  
+          // maxZoomLevel={18}
         >
+        <MapView.Marker
+              coordinate={coords}
+              timestamp={this.state.myPosition.timestamp}
+              description={myMetadata}
+            />
         {
                     props.source ?
                     this.markers(props.source, {imageBus}): null
@@ -235,10 +371,16 @@ markers(location, imageLoc) {
                         strokeColor="#666" />
                     : null
                 }
-          {this.renderRingMarkers()}
+                 {/* <Marker.Animated
+                  coordinate={this.state.coordinate}
+                  ref={marker => {
+                    this.marker = marker;
+                  }}
+                /> */}
+                {this.getMyRings()}
         </MapView>
         <TouchableOpacity
-        onPress={() => console.log('click')} style={styles.touchableOpacity}>
+        onPress={() => this.myGetCurrentLocation()} style={styles.touchableOpacity}>
         <Image source={require('../assets/images/list_menu.png')} style={styles.menuIcon}/>
         </TouchableOpacity>
       </View>
