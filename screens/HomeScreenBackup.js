@@ -216,20 +216,19 @@ myGetCurrentLocation(){
       let tempPosition = { ...this.state.myPosition };
       tempPosition.latitude = position.coords.latitude;
       tempPosition.longitude = position.coords.longitude;
-      
+      console.log('myPositionLat: ' + ' ' + position.coords.latitude);
       firebase.database().ref('myPosition/bus1').set({
           latitude: position.coords.latitude,
           longitude: position.coords.longitude
       })
-      console.log('myPositionLat: ' + ' ' + position.coords.latitude);
+      
       this.setState({
         myPosition: tempPosition,
         isLoading: false,
       });
     },
     error => console.log(error),
-    console.log('before'),
-    { enableHighAccuracy: true, distanceFilter: 10 }
+    { enableHighAccuracy: true, timeout: 200000, distanceFilter: 10 }
   ),
   5000);
 
@@ -362,6 +361,29 @@ markers(location, imageLoc) {
               timestamp={this.state.myPosition.timestamp}
               description={myMetadata}
             />
+        {
+                    props.source ?
+                    this.markers(props.source, {imageBus}): null
+                }
+                {
+                    props.destination ?
+                    this.markers(props.destination, {imageBus}): null
+                }
+                {
+                    props.coords ?
+                    <Polyline
+                        coordinates={props.coords}
+                        strokeWidth={4}
+                        strokeColor="#666" />
+                    : null
+                }
+                 {/* <Marker.Animated
+                  coordinate={this.state.coordinate}
+                  ref={marker => {
+                    this.marker = marker;
+                  }}
+                /> */}
+                {this.getMyRings()}
         </MapView>
         <TouchableOpacity
         onPress={() => this.myGetCurrentLocation()} style={styles.touchableOpacity}>

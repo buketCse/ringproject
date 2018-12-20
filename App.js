@@ -13,6 +13,9 @@ export default class App extends React.Component {
   };
 
   render() {
+    console.ignoredYellowBox = [
+      'Setting a timer'
+    ]
     if (!this.state.isSplashReady ) {
       return (
         <AppLoading
